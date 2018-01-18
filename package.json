@@ -1,0 +1,33 @@
+{
+  "name": "blessedcoins",
+  "version": "0.0.1",
+  "description": "",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/hvmonteiro/blessedcoins.git",
+    "type": "git"
+  },
+  "homepage": "https://github.com/hvmonteiro/blessedcoins",
+  "bugs": "https://github.com/tiaanduplessis/prettycoins",
+  "main": "index.js",
+  "bin": "index.js",
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "test": "npm run format",
+    "format": "prettier-standard index.js",
+    "dev": "npm run test",
+    "start": "node index.js"
+  },
+  "author": "Hugo Monteiro",
+  "devDependencies": {
+    "prettier-standard": "^6.0.0"
+  },
+  "dependencies": {
+    "chalk": "^2.3.0",
+    "cli-table": "^0.3.1",
+    "commander": "^2.13.0",
+    "node-coinmarketcap": "^0.2.0"
+  }
+}
