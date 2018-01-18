@@ -1,11 +1,25 @@
 #!/usr/bin/env node
 "use strict";
 
+const program = require("commander");
 const Table = require("cli-table");
 const chalk = require("chalk");
+const formatNumber = require("format-num");
+const formatCurrency = require("format-currency");
 const CoinMarketCap = require("node-coinmarketcap");
 
 const DEFAULT_CURRENCY = "USD";
+
+const supportedCurrencies = [
+    "AUD", "BRL", "CAD", "CHF", 
+    "CLP", "CNY", "CZK", "DKK", 
+    "EUR", "GBP", "HKD", "HUF", 
+    "IDR", "ILS", "INR", "JPY", 
+    "KRW", "MXN", "MYR", "NOK", 
+    "NZD", "PHP", "PKR", "PLN", 
+    "RUB", "SEK", "SGD", "USD",
+    "THB", "TRY", "TWD", "ZAR"
+];
 
 const table = new Table({
     chars: {
@@ -27,19 +41,6 @@ const table = new Table({
     }
 });
 
-
-const options = {
-    events: false,
-    refresh: 0,
-    convert: DEFAULT_CURRENCY
-};
-const client = new CoinMarketCap(options);
-
-const formatCurrency = val => {
-    return Number.parseFloat(val)
-        .toFixed(2)
-        .replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1,");
-};
 
 const formatGrowth = val => {
     return val.indexOf("-") === -1 ? chalk.green(val) : chalk.red(val);
@@ -76,9 +77,9 @@ const formatRow = (data = {}) => {
     percent_change_7d = formatGrowth(percent_change_7d);
 
     price_usd = Number.parseFloat(price_usd),
-    market_cap_usd = Number.parseFloat(market_cap_usd),
-    available_supply = Number.parseFloat(available_supply),
-    volume_usd = Number.parseFloat(volume_usd);
+        market_cap_usd = Number.parseFloat(market_cap_usd),
+        available_supply = Number.parseFloat(available_supply),
+        volume_usd = Number.parseFloat(volume_usd);
 
     return [
         formatDefault(rank),
@@ -94,8 +95,63 @@ const formatRow = (data = {}) => {
     ];
 };
 
-const run = () => {
-    client.getTop(10, data => {
+function list(val) {
+    return val.split(",");
+}
+
+program
+    .version("0.1.0")
+    .option("-c, --currency <value>", "Get market information about the symbol (ex: BTC, ETH, etc.).", function (value) { return value.split(",")} )
+    .option("-b, --base <value>", "Get market price against the specified base currency symbol. (Default: USD)", "USD")
+//    .option("-p, --price <n>", "Alert when the market matches the specified price.", parseFloat)
+//    .option("-P, --percentage <n>", "Alert when the market matches the specified percentage. (Default: 5)", parseFloat, "5")
+    .option("-t, --top [n] ", "Get specified top currencies (Default: 10)", parseInt, 10)
+//    .option("-a, --all ", "Get all existing currencies on the market", parseInt, 10)
+    .option("-R, --rawstats", "Displays symbol information as raw data (JSON format) instead of human readable. (Default: false)")
+    .option("-r, --refresh [n]", "Refresh information every <n> seconds. Run once and exit if not specified. (Default: 300)", 300, parseInt)
+    .parse(process.argv);
+
+if (!process.argv.slice(2).length) {
+    program.outputHelp();
+    process.exit(1);
+}
+if (program.args != "") {
+    console.log("\n Error: unknown command '%s'", program.args);
+    process.exit(1);
+}
+
+var coinsList = program.currency; // Converted into an array by "list" function
+
+if (!program.top) { 
+    if (coinsList == undefined) {
+        console.log("Error: Mandatory parameter 'currency' is missing."); 
+        process.exit(1);
+    }
+}
+if (supportedCurrencies.indexOf(program.base) === -1) {
+    console.log("Error: Specified convert currency not supported: %s", program.base); 
+    process.exit(1);
+}
+if (Number.isNaN(program.refresh))  {
+    console.log("Error: Incorrect refresh number specified: %s", program.refresh); 
+    process.exit(1);
+}
+
+var topNumber = program.top;
+
+var clientOptions = {
+    // Refresh time in seconds
+    refresh: program.refresh,
+    // Enable event system: true|false
+    events: (program.refresh > 0),
+    // Convert price to different currencies
+    convert: (supportedCurrencies.indexOf(program.base) === -1) ? DEFAULT_CURRENCY : program.base
+}
+
+const client = new CoinMarketCap(clientOptions);
+
+const runTop = () => {
+    client.getTop(topNumber, data => {
         table.push(
             [
                 "#",
@@ -104,10 +160,10 @@ const run = () => {
                 "% 1h",
                 "% 24h",
                 "% 7d",
-                `Price (${options.convert})`,
-                `Market Cap (${options.convert})`,
-                `Circulating Supply (${options.convert})`,
-                `Volume (24h/${options.convert})`
+                `Price (${clientOptions.convert})`,
+                `Market Cap (${clientOptions.convert})`,
+                `Circulating Supply (${clientOptions.convert})`,
+                `Volume (24h/${clientOptions.convert})`
             ].map(val => chalk.bold(val))
         );
         data.map(formatRow).forEach(row => table.push(row));
@@ -115,5 +171,8 @@ const run = () => {
     });
 };
 
-console.log("Getting TOP10 crypto currencies information from CoinMarketCap...");
-run();
+// Trigger this event every <refreshInterval> seconds with information about <currencySymbol>
+client.on("BTC", (coin) => {
+    if (program.top) runTop();
+});
+
