@@ -120,10 +120,10 @@ if (program.args != "") {
     process.exit(1);
 }
 
-var coinsList = program.currency; // Converted into an array by "list" function
+var cryptosList = program.currency; // Converted into an array by "list" function
 
 if (!program.top) { 
-    if (coinsList == undefined) {
+    if (cryptosList == undefined) {
         console.log("Error: Mandatory parameter 'currency' is missing."); 
         process.exit(1);
     }

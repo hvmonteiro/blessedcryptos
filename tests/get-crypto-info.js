@@ -199,8 +199,8 @@ if (program.top)  {
 
     if (!program.silent) console.log("TOP %s symbols:\n\n", program.top);
 
-    coinmarketcap.multi( coins => {
-        var coin = coins.getTop(program.top);
+    coinmarketcap.multi( cryptos => {
+        var coin = cryptos.getTop(program.top);
         console.log(JSON.stringify(coin.map(formatRow)));
     });
 
@@ -208,7 +208,7 @@ if (program.top)  {
 } else {
     if (!enableMonitor) {
         console.log("Getting market information...");
-        coinmarketcap.multi(coins => {
+        coinmarketcap.multi(cryptos => {
 
             for (var i=0; i < currencySymbol.length; ++i) {
 
@@ -216,8 +216,8 @@ if (program.top)  {
                     console.log("=========================================");
                     console.log("Information for: "+currencySymbol[i]);
                 }
-                //coinMarketInfo[coinList[i]] = coins.get(currencySymbol[i]);
-                console(coins.get(currencySymbol[i]));
+                //coinMarketInfo[coinList[i]] = cryptos.get(currencySymbol[i]);
+                console(cryptos.get(currencySymbol[i]));
                 /*
                 if (coinMarketInfo[coinList[i]] == undefined) {
 
