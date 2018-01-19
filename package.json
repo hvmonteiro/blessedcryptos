@@ -1,14 +1,14 @@
 {
-  "name": "blessedcoins",
+  "name": "blessedcryptos",
   "version": "0.0.1",
   "description": "",
   "license": "MIT",
   "repository": {
-    "url": "https://github.com/hvmonteiro/blessedcoins.git",
+    "url": "https://github.com/hvmonteiro/blessedcryptos.git",
     "type": "git"
   },
-  "homepage": "https://github.com/hvmonteiro/blessedcoins",
-  "bugs": "https://github.com/tiaanduplessis/prettycoins",
+  "homepage": "https://github.com/hvmonteiro/blessedcryptos",
+  "bugs": "https://github.com/tiaanduplessis/prettycryptos",
   "main": "index.js",
   "bin": "index.js",
   "files": [
