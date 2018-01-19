@@ -31,13 +31,14 @@ npm start
 ## Output Example:
 ![](images/output-example.png?raw=true)
 
-*Tip*: BlessedCryptos runs best in a terminal with the dimensions 124x22 (or bigger).
+**Tip**: *BlessedCryptos runs best in a terminal with the dimensions 124x22 (or bigger).*
 
 You can refresh the information every <n> seconds (this example is for 10 minutes) using `watch` unix command (remove `FORCE_COLOR=1` for black and white display):
 ```
-watch --differences --interval 300 --beep --no-title --color  "FORCE_COLOR=1 npm --silent start"
+watch --differences --beep --no-title --color --interval 300 "FORCE_COLOR=1 npm --silent start"
 ```
-*Notice*: data on [CoinMarketCap](http://www.coinmarketcap.com) is only refreshed every 10 minutes, so logic dictates that you will unnecessary overload the API server if your refresh interval is less than 300 seconds (10 min).
+
+**Notice**: *data on [CoinMarketCap](http://www.coinmarketcap.com) is only refreshed every 10 minutes, so logic dictates that you will unnecessary overload the API server if your refresh interval is less than `300 seconds (10 min).*
 
 
 # License
