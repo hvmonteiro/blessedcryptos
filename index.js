@@ -2,11 +2,10 @@
 "use strict";
 
 const program = require("commander");
-const Table = require("cli-table");
-const chalk = require("chalk");
-const formatNumber = require("format-num");
 const formatCurrency = require("format-currency");
 const CoinMarketCap = require("node-coinmarketcap");
+const blessed = require("blessed");
+
 
 const DEFAULT_CURRENCY = "USD";
 
@@ -21,33 +20,13 @@ const supportedCurrencies = [
     "THB", "TRY", "TWD", "ZAR"
 ];
 
-const table = new Table({
-    chars: {
-        top: "",
-        "top-mid": "",
-        "top-left": "",
-        "top-right": "",
-        bottom: "",
-        "bottom-mid": "",
-        "bottom-left": "",
-        "bottom-right": "",
-        left: "",
-        "left-mid": "",
-        mid: "",
-        "mid-mid": "",
-        right: "",
-        "right-mid": "",
-        middle: ""
-    }
-});
-
 
 const formatGrowth = val => {
-    return val.indexOf("-") === -1 ? chalk.green(val) : chalk.red(val);
+    return val.indexOf("-") === -1 ? "{green-fg}"+val+"{/}" : "{red-fg}"+val+"{/}";
 };
 
 const formatDefault = val => {
-    return chalk.white(val);
+    return val;
 };
 
 const readableNumber = val => {
@@ -58,11 +37,21 @@ const readableNumber = val => {
     return (val/ Math.pow(1000, e)).toFixed(2) + " " + humanReadableNumbers[e]
 }
 
+const coinMarketCapOptions = {
+    // Refresh time in seconds
+    refresh: program.refresh,
+    // Enable event system: true|false
+    events: (program.refresh > 0),
+    // Convert price to different currencies
+    convert: (supportedCurrencies.indexOf(program.base) === -1) ? DEFAULT_CURRENCY : program.base
+}
+
+
 const formatRow = (data = {}) => {
     let {
+        rank,
         name,
         symbol,
-        rank,
         price_usd,
         market_cap_usd,
         "24h_volume_usd": volume_usd,
@@ -95,7 +84,8 @@ const formatRow = (data = {}) => {
     ];
 };
 
-function list(val) {
+//function list(val) {
+const list = (val = {}) => {
     return val.split(",");
 }
 
@@ -116,7 +106,7 @@ if (!process.argv.slice(2).length) {
     process.exit(1);
 }
 if (program.args != "") {
-    console.log("\n Error: unknown command '%s'", program.args);
+    console.log("\n Error: unknown command %s", program.args);
     process.exit(1);
 }
 
@@ -139,40 +129,134 @@ if (Number.isNaN(program.refresh))  {
 
 var topNumber = program.top;
 
-var clientOptions = {
-    // Refresh time in seconds
-    refresh: program.refresh,
-    // Enable event system: true|false
-    events: (program.refresh > 0),
-    // Convert price to different currencies
-    convert: (supportedCurrencies.indexOf(program.base) === -1) ? DEFAULT_CURRENCY : program.base
-}
+const coinMarketCap = new CoinMarketCap(coinMarketCapOptions);
 
-const client = new CoinMarketCap(clientOptions);
+// Create a screen object.
+const screen = blessed.screen({
+    smartCSR: true,
+});
 
 const runTop = () => {
-    client.getTop(topNumber, data => {
-        table.push(
-            [
-                "#",
-                "Name",
-                "Symbol",
-                "% 1h",
-                "% 24h",
-                "% 7d",
-                `Price (${clientOptions.convert})`,
-                `Market Cap (${clientOptions.convert})`,
-                `Circulating Supply (${clientOptions.convert})`,
-                `Volume (24h/${clientOptions.convert})`
-            ].map(val => chalk.bold(val))
-        );
-        data.map(formatRow).forEach(row => table.push(row));
-        console.log(table.toString());
+
+    const tableListHeader = [
+        [
+            "#",
+            "Name",
+            "Symbol",
+            "% 1h",
+            "% 24h",
+            "% 7d",
+            `Price (${coinMarketCapOptions.convert})`,
+            `Market Cap (${coinMarketCapOptions.convert})`,
+            `Circulating Supply (${coinMarketCapOptions.convert})`,
+            `Volume (24h/${coinMarketCapOptions.convert})`
+        ]
+    ];
+
+    coinMarketCap.getTop(topNumber, data => {
+
+        var rows = data.map(function (value, index) { return formatRow(value); });
+
+        symbolsListTable.setRows(tableListHeader.concat(rows));
+        screen.render();
     });
 };
 
-// Trigger this event every <refreshInterval> seconds with information about <currencySymbol>
-client.on("BTC", (coin) => {
-    if (program.top) runTop();
+screen.title = "Blessed Cryptos";
+
+
+// Create a list box
+const symbolsListTable = blessed.ListTable({
+    top: "top",
+    left: "left",
+    width: "100%",
+    height: "50%",
+    tags: true,
+    keys: true,
+    noCellBorders: false,
+    terminal: "xterm-256color",
+    border: {
+        type: "line"
+    },
+    style: {
+        bg: "black",
+        border: {
+            fg: "gray",
+            //bg: "black"
+        },
+        header: {
+            fg: "white",
+            bg: "black"
+        },
+        selected: {
+            fg: "red",
+            bg: "white"
+        },
+        item: {
+            fg: "gray90",
+            bg: "black"
+        },
+        scrollbar: {
+            bg: 'red',
+            fg: 'blue'
+        }
+    },
 });
+
+
+const symbolsInfoBox = blessed.text({
+    top: "50%",
+    left: "left",
+    width: "50%",
+    height: "50%",
+    tags: true,
+    keys: false,
+    content: "{center}Info{/center}",
+    noCellBorders: false,
+    terminal: "xterm-256color",
+    border: {
+        type: "line"
+    },
+    style: {
+        bg: "black",
+        border: {
+            fg: "gray"
+        }
+    }
+});
+
+// Trigger this event every <refreshInterval> seconds
+
+if (program.top) runTop();
+
+
+
+//symbolsListTable.setRows(tableListHeader);
+// Append our box to the screen.
+screen.append(symbolsInfoBox);
+screen.append(symbolsListTable);
+
+
+// If box is focused, handle `enter`/`return` and give us some more content.
+symbolsListTable.key("enter", function(ch, key) {
+    //symbolsInfoBox.content(symbolsListTable.Selected);
+    symbolsListTable.getItem( item => {
+        symbolsInfoBox.setContent(item);
+    symbolsInfoBox.setContent("Hello {bold}world{/bold}!");
+    });
+    screen.render();
+});
+
+
+// Quit on Escape, q, or Control-C.
+screen.key(["escape", "q", "C-c"], function(ch, key) {
+    return process.exit(0);
+});
+
+// Focus tableList element.
+symbolsListTable.focus();
+
+// Render the screen.
+screen.render();
+
 

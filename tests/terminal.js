@@ -1,63 +1,97 @@
-var blessed = require('blessed');
+const blessed = require('blessed');
 
 // Create a screen object.
-var screen = blessed.screen({
+const screen = blessed.screen({
     smartCSR: true
 });
 
-screen.title = 'BlessedCoins (1.0.0)';
+const clientOptions = {
+    convert: "USD"
+}
 
-// Create a box perfectly centered horizontally and vertically.
-var box = blessed.box({
+screen.title = 'Terminal';
+// Create a list box
+const symbolsListTable = blessed.ListTable({
     top: 'top',
     left: 'left',
-    width: '50%',
+    width: '100%',
     height: '50%',
-    content: 'Hello {bold}world{/bold}!',
     tags: true,
+    keys: true,
+    noCellBorders: false,
+    border: {
+        type: 'line',
+    },
+    style: {
+        fg: 'white',
+        bg: 'black',
+        border: {
+            fg: '#efefef'
+        },
+        header: {
+            bg: "black",
+            fg: "white"
+        },
+        scrollbar: {
+            bg: 'red',
+            fg: 'blue'
+        }
+    },
+    rows: [ 
+        [
+            "#",
+            "Name",
+            "Symbol",
+            "% 1h",
+            "% 24h",
+            "% 7d",
+            `Price (${clientOptions.convert})`,
+            `Market Cap (${clientOptions.convert})`,
+            `Circulating Supply (${clientOptions.convert})`,
+            `Volume (24h/${clientOptions.convert})`
+        ]
+    ]
+});
+
+
+const symbolsInfoBox = blessed.box({
+    top: 'center',
+    left: 'center',
+    width: '200',
+    height: '200',
+    tags: true,
+    keys: true,
     border: {
         type: 'line'
     },
     style: {
         fg: 'white',
-        bg: 'magenta',
+        bg: 'black',
         border: {
             fg: '#f0f0f0'
         },
         hover: {
-            bg: 'green'
+            bg: 'orange'
         }
     }
 });
 
+
 // Append our box to the screen.
-screen.append(box);
+screen.append(symbolsListTable);
 
-// Add a png icon to the box
-var icon = blessed.image({
-    parent: box,
-    top: 0,
-    left: 0,
-    type: 'overlay',
-    width: 'shrink',
-    height: 'shrink',
-    file: __dirname + '/my-program-icon.png',
-    search: false
-});
-
-// If our box is clicked, change the content.
-box.on('click', function(data) {
-    box.setContent('{center}Some different {red-fg}content{/red-fg}.{/center}');
-    screen.render();
-});
 
 // If box is focused, handle `enter`/`return` and give us some more content.
-box.key('enter', function(ch, key) {
-    box.setContent('{right}Even different {black-fg}content{/black-fg}.{/right}\n');
-    box.setLine(1, 'bar');
-    box.insertLine(1, 'foo');
+symbolsListTable.key('enter', function(ch, key) {
+    symbolsInfoBox.add('{right}Even different {black-fg}content{/black-fg}.{/right}\n');
+    screen.append(symbolsInfoBox);
     screen.render();
 });
+symbolsListTable.add("1 col2 col3");
+symbolsListTable.add("line2");
+symbolsListTable.add("line3");
+symbolsListTable.add("line4");
+
 
 // Quit on Escape, q, or Control-C.
 screen.key(['escape', 'q', 'C-c'], function(ch, key) {
@@ -65,7 +99,8 @@ screen.key(['escape', 'q', 'C-c'], function(ch, key) {
 });
 
 // Focus our element.
-box.focus();
+symbolsListTable.focus();
 
 // Render the screen.
 screen.render();
+
