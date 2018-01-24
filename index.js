@@ -14,6 +14,7 @@ const MIN_SCREEN_WIDTH = 140;
 const MIN_SCREEN_HEIGHT = 40;
 
 const DEFAULT_CURRENCY = "USD";
+const TOP_CURRENCIES_NUMBER = 20;
 
 const supportedCurrencies = [
     "AUD", "BRL", "CAD", "CHF", 
@@ -104,16 +105,17 @@ programParams
     .option("-b, --base <value>", "Get market price against the specified base currency symbol. (Default: USD)", "USD")
 //    .option("-p, --price <n>", "Alert when the market matches the specified price.", parseFloat)
 //    .option("-P, --percentage <n>", "Alert when the market matches the specified percentage. (Default: 5)", parseFloat, "5")
-    .option("-t, --top [n] ", "Get specified top currencies (Default: 10)", parseInt, 10)
+    .option("-t, --top [n] ", "Get specified top currencies (Default: " + TOP_CURRENCIES_NUMBER + ")", parseInt, TOP_CURRENCIES_NUMBER)
 //    .option("-a, --all ", "Get all existing currencies on the market", parseInt, 10)
     .option("-R, --rawstats", "Displays symbol information as raw data (JSON format) instead of human readable. (Default: false)")
     .option("-r, --refresh [n]", "Refresh information every <n> seconds. Run once and exit if not specified. (Default: 300)", 300, parseInt)
     .parse(process.argv);
-
+/*
 if (!process.argv.slice(2).length) {
     programParams.outputHelp();
     process.exit(1);
 }
+*/
 if (programParams.args != "") {
     console.log("\n Error: unknown command %s", programParams.args);
     process.exit(1);
@@ -174,7 +176,7 @@ const runTop = () => {
 
         tickerListTable.setRows(tableListHeader.concat(rows));
         loaderBox.stop();
-        RefreshInfoLine.setContent("Refreshed @ " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds());
+        RefreshInfoLine.setContent("Refreshed {bold}@{/bold} " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + "  ");
         screen.render();
     });
 };
@@ -307,11 +309,12 @@ const statusLine = blessed.box({
     height: 1,
     left: 0,
     width: "100%",
+    tags: true,
     style: {
         bg: "black",
         align: "left"
     },
-    content: "This is the status line (`/` for input box)."
+    content: "  {bold}Q{/bold}uit | {bold}/{/bold} Prompt | "
 });
 
 
@@ -321,11 +324,12 @@ const RefreshInfoLine = blessed.box({
     height: 1,
     right: 0,
     width: "shrink",
+    tags: true,
     style: {
         bg: "black",
         align: "right",
     },
-    content: "Refreshed @ "
+    content: "Refreshed {bold}@{/bold} "
 });
 
 
@@ -353,7 +357,7 @@ const tickerInfoBox = blessed.box({
     hidden: true,
     border: "line",
     label: " Ticker Info ",
-    content: "{center}ticker info{/}",
+    content: "{center}ticker info{/center}",
 });
 
 
@@ -412,6 +416,10 @@ screen.key(["R", "r"], function(ch, key) {
     if (programParams.top) runTop();
 });
 
+tickerDetailBox.setContent('hello\n'
+      + '{right}world{/right}\n'
+      + '{center}foo{/center}\n'
+  + 'left{|}right');
 
 
 // If box is focused, handle `enter`/`return` and give us some more content.
