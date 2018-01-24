@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 "use strict";
 
-const program = require("commander");
+const programParams = require("commander");
 const formatCurrency = require("format-currency");
 const CoinMarketCap = require("node-coinmarketcap");
 const blessed = require("blessed");
+const program = blessed.program();
 
+
+const MIN_SCREEN_WIDTH = 140;
+const MIN_SCREEN_HEIGHT = 40;
 
 const DEFAULT_CURRENCY = "USD";
 
@@ -39,15 +43,15 @@ const readableNumber = val => {
 
 const coinMarketCapOptions = {
     // Refresh time in seconds
-    refresh: program.refresh,
+    refresh: programParams.refresh,
     // Enable event system: true|false
-    events: (program.refresh > 0),
+    events: (programParams.refresh > 0),
     // Convert price to different currencies
-    convert: (supportedCurrencies.indexOf(program.base) === -1) ? DEFAULT_CURRENCY : program.base
+    convert: (supportedCurrencies.indexOf(programParams.base) === -1) ? DEFAULT_CURRENCY : programParams.base
 }
 
 
-const formatRow = (data = {}) => {
+const formatTableRow = (data = {}) => {
     let {
         rank,
         name,
@@ -89,7 +93,10 @@ const list = (val = {}) => {
     return val.split(",");
 }
 
-program
+
+var tickersRawData = [];
+
+programParams
     .version("0.1.0")
     .option("-c, --currency <value>", "Get market information about the symbol (ex: BTC, ETH, etc.).", function (value) { return value.split(",")} )
     .option("-b, --base <value>", "Get market price against the specified base currency symbol. (Default: USD)", "USD")
@@ -102,38 +109,39 @@ program
     .parse(process.argv);
 
 if (!process.argv.slice(2).length) {
-    program.outputHelp();
+    programParams.outputHelp();
     process.exit(1);
 }
-if (program.args != "") {
-    console.log("\n Error: unknown command %s", program.args);
+if (programParams.args != "") {
+    console.log("\n Error: unknown command %s", programParams.args);
     process.exit(1);
 }
 
-var cryptosList = program.currency; // Converted into an array by "list" function
+var cryptosList = programParams.currency; // Converted into an array by "list" function
 
-if (!program.top) { 
+if (!programParams.top) { 
     if (cryptosList == undefined) {
         console.log("Error: Mandatory parameter 'currency' is missing."); 
         process.exit(1);
     }
 }
-if (supportedCurrencies.indexOf(program.base) === -1) {
-    console.log("Error: Specified convert currency not supported: %s", program.base); 
+if (supportedCurrencies.indexOf(programParams.base) === -1) {
+    console.log("Error: Specified convert currency not supported: %s", programParams.base); 
     process.exit(1);
 }
-if (Number.isNaN(program.refresh))  {
-    console.log("Error: Incorrect refresh number specified: %s", program.refresh); 
+if (Number.isNaN(programParams.refresh))  {
+    console.log("Error: Incorrect refresh number specified: %s", programParams.refresh); 
     process.exit(1);
 }
 
-var topNumber = program.top;
+var topNumber = programParams.top;
 
 const coinMarketCap = new CoinMarketCap(coinMarketCapOptions);
 
 // Create a screen object.
 const screen = blessed.screen({
     smartCSR: true,
+    terminal: "xterm-256color",
 });
 
 const runTop = () => {
@@ -153,11 +161,14 @@ const runTop = () => {
         ]
     ];
 
+    loaderBox.load("Loading...");
     coinMarketCap.getTop(topNumber, data => {
 
-        var rows = data.map(function (value, index) { return formatRow(value); });
+        tickersRawData = data;
+        var rows = data.map(function (value, index) { return formatTableRow(value); });
 
-        symbolsListTable.setRows(tableListHeader.concat(rows));
+        tickerListTable.setRows(tableListHeader.concat(rows));
+        loaderBox.stop();
         screen.render();
     });
 };
@@ -166,15 +177,18 @@ screen.title = "Blessed Cryptos";
 
 
 // Create a list box
-const symbolsListTable = blessed.ListTable({
-    top: "top",
-    left: "left",
+const tickerListTable = blessed.ListTable({
+    label: " {bold}T{/}icker List ",
+    parent: screen,
+    top: 0,
+    left: 0,
     width: "100%",
-    height: "50%",
+    height: 18,
     tags: true,
     keys: true,
+    vi: true,
     noCellBorders: false,
-    terminal: "xterm-256color",
+    //    terminal: "xterm-256color",
     border: {
         type: "line"
     },
@@ -190,30 +204,43 @@ const symbolsListTable = blessed.ListTable({
         },
         selected: {
             fg: "red",
-            bg: "white"
+            //bg: "white",
+            bold: true,
         },
         item: {
+            hover: {
+                bg: 'blue'
+            },
             fg: "gray90",
             bg: "black"
         },
-        scrollbar: {
-            bg: 'red',
-            fg: 'blue'
+    },
+    scrollbar: {
+        ch: ' ',
+        track: {
+            bg: 'cyan'
+        },
+        style: {
+            inverse: true
         }
     },
+    search: function(callback) {
+        promptBox.input("Prompt: ", "", function(err, value) {
+            if (err) return;
+            return callback(null, value);
+        });
+    }
 });
 
 
-const symbolsInfoBox = blessed.text({
-    top: "50%",
-    left: "left",
+const tickerDetailBox = blessed.box({
+    parent: screen,
+    top: 18,
+    left: "0",
     width: "50%",
     height: "50%",
     tags: true,
     keys: false,
-    content: "{center}Info{/center}",
-    noCellBorders: false,
-    terminal: "xterm-256color",
     border: {
         type: "line"
     },
@@ -222,39 +249,148 @@ const symbolsInfoBox = blessed.text({
         border: {
             fg: "gray"
         }
-    }
+    },
+    label: " Ticker {bold}D{/}etail ",
+    content: "{center}ticker detail{/}",
 });
 
-// Trigger this event every <refreshInterval> seconds
+var promptBox = blessed.prompt({
+    parent: screen,
+    bottom: 2,
+    left: 0,
+    height: 1,
+    width: "100%",
+    keys: true,
+    vi: true,
+    mouse: true,
+    tags: true,
+    border: false,
+});
 
-if (program.top) runTop();
+var statusLine = blessed.box({
+    parent: screen,
+    bottom: 0,
+    height: 1,
+    width: "100%",
+    align: "left",
+    style: {
+        bg: "black",
+        align: "left"
+    },
+    content: "This is the status line (`/` for input box)."
+});
+
+var RefreshInfoLine = blessed.box({
+    parent: screen,
+    bottom: 0,
+    height: 1,
+    align: "right",
+    width: "shrink",
+    style: {
+        align: "right",
+        bg: "black"
+    },
+    content: "Refreshed @ "
+});
 
 
+var loaderBox = blessed.loading({
+    parent: screen,
+    top: 'center',
+    left: 'center',
+    height: 5,
+    align: 'center',
+    width: 50,
+    tags: true,
+    hidden: true,
+    border: 'line'
+});
 
-//symbolsListTable.setRows(tableListHeader);
-// Append our box to the screen.
-screen.append(symbolsInfoBox);
-screen.append(symbolsListTable);
+
+var tickerInfoBox = blessed.box({
+    parent: screen,
+    top: 'center',
+    left: 'center',
+    height: 30,
+    width: 50,
+    align: 'center',
+    tags: true,
+    hidden: true,
+    border: 'line',
+    label: " Ticker Info ",
+    content: "{center}ticker info{/}",
+});
+
+// get and setup tickers first time
+if (programParams.top) runTop();
+
+// Enable refresh data event using BTC ticker changes
+coinMarketCap.on("BTC", (tickerData, event) => {
+    // Refresh ticker information every programParams.refresh seconds
+    if (programParams.top) runTop();
+});
 
 
-// If box is focused, handle `enter`/`return` and give us some more content.
-symbolsListTable.key("enter", function(ch, key) {
-    //symbolsInfoBox.content(symbolsListTable.Selected);
-    symbolsListTable.getItem( item => {
-        symbolsInfoBox.setContent(item);
-    symbolsInfoBox.setContent("Hello {bold}world{/bold}!");
-    });
+tickerInfoBox.key(["escape", "enter"], function(ch, key) {
+    tickerInfoBox.hide();
+    tickerListTable.focus();
     screen.render();
 });
 
 
+// Show when pressing Enter over an item
+tickerListTable.on("select", function(el, selected) {
+    if (tickerListTable._.rendering) return;
+
+    // Get row as text, trim spaces, remove indent cell spaces and convert to an array
+    var tickerInfo = el.getText().trim().replace(/\s\s+/g, " ").split(" ");
+
+    var name = tickerInfo[1];
+    //console.log(tickerInfo);
+    //console.log(tickersRawData);
+
+    tickerInfoBox.setContent("Hello {bold}world{/bold}!");
+    tickerInfoBox.setContent(JSON.stringify(tickerInfo));
+    tickerInfoBox.show();
+    tickerInfoBox.focus();
+    screen.render();
+
+    tickerDetailBox.setContent(name);
+});
+
+
+screen.key(["R", "r"], function(ch, key) {
+    // refresh data
+    if (programParams.top) runTop();
+});
+
+
+
+// If box is focused, handle `enter`/`return` and give us some more content.
+/*
+tickerListTable.key("enter", function(ch, key) {
+    tickerInfoBox.setContent("Hello {bold}world{/bold}!");
+    tickerInfoBox.show();
+    tickerInfoBox.focus();
+    screen.render();
+});
+*/
+
+
 // Quit on Escape, q, or Control-C.
-screen.key(["escape", "q", "C-c"], function(ch, key) {
+screen.key(["q", "C-c"], function(ch, key) {
     return process.exit(0);
 });
 
 // Focus tableList element.
-symbolsListTable.focus();
+tickerListTable.focus();
+
+
+if (program.cols < MIN_SCREEN_WIDTH) {
+    console.log("This program can only open on a terminal with a minimum of 140x40 characters.");
+    console.log("Your terminal is %sx%s.", program.cols, program.rows);
+    process.exit();
+}
 
 // Render the screen.
 screen.render();
