@@ -8,6 +8,8 @@ const blessed = require("blessed");
 const program = blessed.program();
 
 
+const TITLE = "Blessed Cryptos"
+const VERSION = "0.1.0"
 const MIN_SCREEN_WIDTH = 140;
 const MIN_SCREEN_HEIGHT = 40;
 
@@ -97,7 +99,7 @@ const list = (val = {}) => {
 var tickersRawData = [];
 
 programParams
-    .version("0.1.0")
+    .version(VERSION)
     .option("-c, --currency <value>", "Get market information about the symbol (ex: BTC, ETH, etc.).", function (value) { return value.split(",")} )
     .option("-b, --base <value>", "Get market price against the specified base currency symbol. (Default: USD)", "USD")
 //    .option("-p, --price <n>", "Alert when the market matches the specified price.", parseFloat)
@@ -165,15 +167,17 @@ const runTop = () => {
     coinMarketCap.getTop(topNumber, data => {
 
         tickersRawData = data;
+        var date = new Date();
         var rows = data.map(function (value, index) { return formatTableRow(value); });
 
         tickerListTable.setRows(tableListHeader.concat(rows));
         loaderBox.stop();
+        RefreshInfoLine.setContent("Refreshed @ " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds());
         screen.render();
     });
 };
 
-screen.title = "Blessed Cryptos";
+screen.title = TITLE + "(" + VERSION + ")";
 
 
 // Create a list box
@@ -209,16 +213,16 @@ const tickerListTable = blessed.ListTable({
         },
         item: {
             hover: {
-                bg: 'blue'
+                bg: "blue"
             },
             fg: "gray90",
             bg: "black"
         },
     },
     scrollbar: {
-        ch: ' ',
+        ch: " ",
         track: {
-            bg: 'cyan'
+            bg: "cyan"
         },
         style: {
             inverse: true
@@ -230,6 +234,7 @@ const tickerListTable = blessed.ListTable({
             return callback(null, value);
         });
     }
+ 
 });
 
 
@@ -254,25 +259,52 @@ const tickerDetailBox = blessed.box({
     content: "{center}ticker detail{/}",
 });
 
-var promptBox = blessed.prompt({
+
+const loggerMessagesBox = blessed.list({
     parent: screen,
-    bottom: 2,
-    left: 0,
-    height: 1,
-    width: "100%",
+    top: 18,
+    right: "0",
+    width: "50%",
+    height: "50%",
+    tags: true,
+    keys: false,
+    border: {
+        type: "line"
+    },
+    style: {
+        bg: "black",
+        border: {
+            fg: "gray"
+        }
+    },
+    label: " {bold}M{/}essages ",
+    //rows: [ ["a message"], ["another message"] ]
+    content: "{center}ticker info{/}",
+});
+
+
+const promptBox = blessed.prompt({
+    parent: screen,
+    top: "center",
+    left: "center",
+    height: 8,
+    align: "center",
+    width: 100,
+    tags: true,
+    hidden: true,
+    border: "line",
     keys: true,
     vi: true,
     mouse: true,
-    tags: true,
-    border: false,
 });
 
-var statusLine = blessed.box({
+
+const statusLine = blessed.box({
     parent: screen,
     bottom: 0,
     height: 1,
+    left: 0,
     width: "100%",
-    align: "left",
     style: {
         bg: "black",
         align: "left"
@@ -280,46 +312,61 @@ var statusLine = blessed.box({
     content: "This is the status line (`/` for input box)."
 });
 
-var RefreshInfoLine = blessed.box({
+
+const RefreshInfoLine = blessed.box({
     parent: screen,
     bottom: 0,
     height: 1,
-    align: "right",
+    right: 0,
     width: "shrink",
     style: {
+        bg: "black",
         align: "right",
-        bg: "black"
     },
     content: "Refreshed @ "
 });
 
 
-var loaderBox = blessed.loading({
+const loaderBox = blessed.loading({
     parent: screen,
-    top: 'center',
-    left: 'center',
+    top: "center",
+    left: "center",
     height: 5,
-    align: 'center',
-    width: 50,
+    align: "center",
+    width: 30,
     tags: true,
     hidden: true,
-    border: 'line'
+    border: "line"
 });
 
 
-var tickerInfoBox = blessed.box({
+const tickerInfoBox = blessed.box({
     parent: screen,
-    top: 'center',
-    left: 'center',
+    top: "center",
+    left: "center",
     height: 30,
     width: 50,
-    align: 'center',
+    align: "center",
     tags: true,
     hidden: true,
-    border: 'line',
+    border: "line",
     label: " Ticker Info ",
     content: "{center}ticker info{/}",
 });
+
+
+const messageBox = blessed.message({
+  parent: screen,
+  top: "center",
+  left: "center",
+  height: "shrink",
+  width: "50%",
+  align: "center",
+  tags: true,
+  hidden: true,
+  border: "line"
+});
+
 
 // get and setup tickers first time
 if (programParams.top) runTop();
@@ -349,8 +396,7 @@ tickerListTable.on("select", function(el, selected) {
     //console.log(tickerInfo);
     //console.log(tickersRawData);
 
-    tickerInfoBox.setContent("Hello {bold}world{/bold}!");
-    tickerInfoBox.setContent(JSON.stringify(tickerInfo));
+    tickerInfoBox.setContent(JSON.stringify(tickerInfo).replace(/,/g, "\n"));
     tickerInfoBox.show();
     tickerInfoBox.focus();
     screen.render();
