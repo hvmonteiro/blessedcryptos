@@ -45,11 +45,11 @@ const readableNumber = val => {
 
 const coinMarketCapOptions = {
     // Refresh time in seconds
-    refresh: programParams.refresh,
+    refresh: 300,
     // Enable event system: true|false
-    events: (programParams.refresh > 0),
+    events: true,
     // Convert price to different currencies
-    convert: (supportedCurrencies.indexOf(programParams.base) === -1) ? DEFAULT_CURRENCY : programParams.base
+    convert: DEFAULT_CURRENCY
 }
 
 
@@ -135,6 +135,8 @@ if (Number.isNaN(programParams.refresh))  {
     console.log("Error: Incorrect refresh number specified: %s", programParams.refresh); 
     process.exit(1);
 }
+    
+coinMarketCapOptions.refresh = (Number(coinMarketCapOptions.refresh) < 300) ? programParams.refresh : 300;
 
 var topNumber = programParams.top;
 
