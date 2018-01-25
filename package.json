@@ -26,13 +26,11 @@
   },
   "dependencies": {
     "blessed": "^0.1.81",
-    "chalk": "^2.3.0",
     "cli-table": "^0.3.1",
     "commander": "^2.13.0",
     "format-currency": "^1.0.0",
     "format-num": "^1.0.0",
-    "node-coinmarketcap": "^0.2.0",
-    "term": "0.0.2",
-    "term.js": "0.0.7"
+    "json-fs-store": "^1.0.1",
+    "node-coinmarketcap": "^0.2.0"
   }
 }
