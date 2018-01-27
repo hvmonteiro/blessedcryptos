@@ -25,12 +25,18 @@
     "prettier-standard": "^6.0.0"
   },
   "dependencies": {
+    "bitfinex-api-node": "^2.0.0-beta",
+    "bitstamp": "^1.0.6",
     "blessed": "^0.1.81",
     "cli-table": "^0.3.1",
+    "coinbase-node": "^0.2.1",
     "commander": "^2.13.0",
     "format-currency": "^1.0.0",
     "format-num": "^1.0.0",
+    "hitbtc-api": "^3.0.2",
     "json-fs-store": "^1.0.1",
-    "node-coinmarketcap": "^0.2.0"
+    "node-binance-api": "^0.4.6",
+    "node-coinmarketcap": "^0.2.0",
+    "node.bittrex.api": "^1.0.0"
   }
 }
