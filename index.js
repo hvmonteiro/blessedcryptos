@@ -15,8 +15,8 @@ const blessed = require('blessed');
 const configJSON = require('json-fs-store')('.config.json');
 
 
-const TITLE = 'Blessed Cryptos'
-const VERSION = '0.1.0'
+const TITLE = 'Blessed Cryptos';
+const VERSION = '0.1.0';
 const MIN_SCREEN_WIDTH = 140;
 const MIN_SCREEN_HEIGHT = 40;
 
@@ -29,7 +29,7 @@ const configSettings = {
         'ETH', 
         'LTC'],
     'refresh' : '300'
-}
+};
 
 const supportedCurrencies = [
     'AUD', 'BRL', 'CAD', 'CHF', 
@@ -56,8 +56,8 @@ const readableNumber = val => {
     const humanReadableNumbers = [ 'hundred', 'thoushand', 'million', 'billion'];
     if (val === null) return '0'; // if undefined,  return a zero
     var e = Math.floor(Math.log(val) / Math.log(1000));
-    return (val/ Math.pow(1000, e)).toFixed(2) + ' ' + humanReadableNumbers[e]
-}
+    return (val/ Math.pow(1000, e)).toFixed(2) + ' ' + humanReadableNumbers[e];
+};
 
 const coinMarketCapOptions = {
     // Refresh time in seconds
@@ -66,7 +66,7 @@ const coinMarketCapOptions = {
     events: true,
     // Convert price to different currencies
     convert: DEFAULT_CURRENCY
-}
+};
 
 
 const formatTableRow = (data = {}) => {
@@ -471,14 +471,14 @@ const messageBox = blessed.message({
 //function list(val) {
 const list = (val = {}) => {
     return val.split(',');
-}
+};
 
 
 var tickersRawData = [];
 
 programParams
     .version(VERSION)
-    .option('-c, --currency <value>', 'Get market information about the symbol (ex: BTC, ETH, etc.).', function (value) { return value.split(',')} )
+    .option('-c, --currency <value>', 'Get market information about the symbol (ex: BTC, ETH, etc.).', function (value) { return value.split(',');} )
     .option('-b, --base <value>', 'Get market price against the specified base currency symbol. (Default: USD)', 'USD')
 //    .option('-p, --price <n>', 'Alert when the market matches the specified price.', parseFloat)
 //    .option('-P, --percentage <n>', 'Alert when the market matches the specified percentage. (Default: 5)', parseFloat, '5')
@@ -573,10 +573,10 @@ screen.key('C-r', function(ch, key) {
     if (programParams.top) runTop();
 });
 
-tickerDetailBox.setContent('hello\n'
-    + '{right}world{/right}\n'
-    + '{center}foo{/center}\n'
-    + 'left{|}right');
+tickerDetailBox.setContent('hello\n' +
+    '{right}world{/right}\n' +
+    '{center}foo{/center}\n' +
+    'left{|}right');
 
 
 // If box is focused, handle `enter`/`return` and give us some more content.
