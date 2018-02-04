@@ -28,6 +28,7 @@
     "bitfinex-api-node": "^2.0.0-beta",
     "bitstamp": "^1.0.6",
     "blessed": "^0.1.81",
+    "blessed-contrib": "^4.8.5",
     "cli-table": "^0.3.1",
     "coinbase-node": "^0.2.1",
     "commander": "^2.13.0",
